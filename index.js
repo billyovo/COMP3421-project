@@ -1,22 +1,178 @@
 const express = require('express')
-const db = require("./helpers/database.js");
+const helmet = require('helmet');
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser')
+
+const db = require("./helpers/database.js");
+const crypto = require("./helpers/crypto.js");
+const auth = require("./middleware/auth.js");
+
 const app = express();
 const port = 3000
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cookieParser())
+app.use(helmet());
 
-app.post('/name_availability', async (req, res) => {
-    const name = req.body.name;
-    try{
-      const result = await db.query('EXEC is_duplicate_username @user_name', {user_name: name});
-        res.status(result[0].is_duplicate ? 409 : 200).send();
-    }
-    catch(error){
-      res.status(400).send();
-    }
+//---------------------------------------auth functions------------------------------------------
+app.post('/auth/name_availability', async (req, res) => {
+  const name = req.body.name;
+  try{
+    const result = await db.query('EXEC is_duplicate_username @user_name', {user_name: name});
+    res.status(result[0].is_duplicate ? 409 : 200).send();
+  }
+  catch(error){
+    res.status(400).send();
+  }
 });
 
+app.post('/auth/register',async (req, res)=>{
+  const name = req.body.username;
+  const password = req.body.password;
+  if(name.match(/[!@#$%^&*()+ \-=\[\]{};':"\\|,.<>\/?]/)){
+    res.status(400).send("Name cannot contain special character or spect except underscore!");
+    return;
+  }
+
+  try{
+    const salt = crypto.getRandomBytes();
+    const hash = crypto.SHA256(password+salt);
+    await db.query('EXEC register @user_name, @password, @salt', 
+      {
+        user_name: name,
+        password: hash,
+        salt: salt
+      }
+    );
+    res.status(201).send();
+  }
+  catch(error){
+    switch(error.number){
+      case 2627:{
+        res.status(400).send("duplicate user name found!");
+        break;
+      }
+      default:{
+        res.status(400).send("Unknown error occured!");
+        break;
+      }
+    }
+  }
+})
+
+app.post('/auth/login',async (req, res, next)=>{
+  const user_name = req.body.user_name;
+  const password = req.body.password;
+  res.set('Cache-Control', 'no-store');
+  res.set('Pragma', 'no-cache');
+  const salt = await db.query('EXEC get_salt_by_username @user_name', {user_name: user_name});
+  if(!salt[0]){
+    res.status(401).send("Wrong credientials!");
+  }
+  const hash = crypto.SHA256(password+salt[0].password_salt);
+  const result = await db.query('EXEC is_valid_login @user_name, @password_hash',{
+    user_name: user_name,
+    password_hash: hash
+  })
+  switch(result.length){
+    case 1:{
+      const refresh_token = crypto.signRefreshToken(result[0].user_name, result[0].userID);
+      res.cookie('refresh_token', refresh_token, 
+        { 
+          secure: true,
+          httpOnly: true,
+          maxAge: 1209600000
+        }
+      );
+      res.status(200).send({
+        user_name: result[0].user_name,
+        userID: result[0].userID
+      })
+      break;
+    }
+    case 0:{
+      res.status(401).send("Wrong credientials!");
+      break;
+    }
+    default:{
+      res.status(400).send("An error occured!");
+      break;
+    }
+  }
+})
+
+app.post('/auth/refresh_access',async (req, res)=>{
+  const refresh_token = req.cookies.refresh_token;
+  res.set('Cache-Control', 'no-store');
+  res.set('Pragma', 'no-cache');
+  if(!refresh_token || !crypto.verifyToken(refresh_token, 'refresh')){
+    res.status(401).send("Please log in!");
+  }
+  else{
+    const access_token = crypto.signAccessToken(refresh_token);
+    res.cookie('access_token', access_token, 
+        { 
+          secure: true,
+          httpOnly: true,
+          maxAge: 43200000
+        }
+      );
+    if(req.query.referrer){
+      res.redirect(307,req.query.referrer);
+    }
+    else{
+      res.status(200).send();
+    }
+  }
+})
+
+//--------------------------------------------------post functions----------------------------------------------------------
+app.post('/forum/create_post',auth.authMiddleware, async(req,res)=>{
+  try{
+    await db.query('EXEC create_post @category, @title, @content, @authorID',{
+      category: req.body.category,
+      title: req.body.title,
+      content: req.body.content,
+      authorID: req.body.userID
+    });
+    res.status(201).send();
+  }
+  catch(error){
+    res.status(400).send(error.message);
+  }
+  })
+
+  app.post('/forum/reply_post',auth.authMiddleware, async(req,res)=>{
+    try{
+      await db.query('EXEC reply_post @content, @authorID, @postID, @reply_to_order',{
+          content: req.body.content,
+          authorID: req.body.userID,
+          postID: req.body.postID,
+          reply_to_order: req.body.reply_to_order
+      })
+      res.status(201).send();
+    }
+    catch(error){
+      res.status(400).send(error.message);
+    }
+  })
+
+  app.post('/forum/vote_post',auth.authMiddleware, async(req,res)=>{
+    try{
+      await db.query('EXEC vote_reply @replyID, @userID, @voteType',{
+          replyID: req.body.replyID,
+          userID: req.body.userID,
+          voteType: req.body.voteType
+      })
+      res.status(201).send();
+    }
+    catch(error){
+      res.status(400).send(error.message);
+    }
+  })
+  
+//--------------------------------------get functions--------------------------------------
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+  console.log(`API running on port ${port}`)
 })

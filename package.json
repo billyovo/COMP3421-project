@@ -1,17 +1,19 @@
 {
   "name": "project",
   "version": "1.0.0",
-  "description": "",
+  "description": "COMP3421 project backend",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "billyovo",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.0",
+    "cookie-parser": "^1.4.6",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
+    "helmet": "^5.0.2",
     "jsonwebtoken": "^8.5.1",
     "mssql": "^8.0.2"
   }

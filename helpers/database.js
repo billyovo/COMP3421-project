@@ -1,4 +1,4 @@
-var sql = require('mssql');
+const sql = require('mssql');
 require('dotenv').config();
 const config = {
   user: process.env.DB_USER,
@@ -22,7 +22,7 @@ sql.connect(config,function (err) {
 async function query(query, parameters){
   const request = new sql.PreparedStatement();
   for(const property in parameters){
-    request.input(property, sql.Text);
+    request.input(property, Number.isInteger(parameters[property]) || parameters[property] == null? sql.Int : sql.Text);
   }
   await request.prepare(query);
   const result = await request.execute(parameters);
