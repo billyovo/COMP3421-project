@@ -128,7 +128,7 @@ app.post('/auth/refresh_access',async (req, res)=>{
 })
 
 //--------------------------------------------------post functions----------------------------------------------------------
-app.post('/forum/create_post',auth.authMiddleware, async(req,res)=>{
+app.post('/api/create_post',auth.authMiddleware, async(req,res)=>{
   try{
     await db.query('EXEC create_post @category, @title, @content, @authorID',{
       category: req.body.category,
@@ -143,7 +143,7 @@ app.post('/forum/create_post',auth.authMiddleware, async(req,res)=>{
   }
   })
 
-  app.post('/forum/reply_post',auth.authMiddleware, async(req,res)=>{
+  app.post('/api/reply_post',auth.authMiddleware, async(req,res)=>{
     try{
       await db.query('EXEC reply_post @content, @authorID, @postID, @reply_to_order',{
           content: req.body.content,
@@ -158,7 +158,7 @@ app.post('/forum/create_post',auth.authMiddleware, async(req,res)=>{
     }
   })
 
-  app.post('/forum/vote_post',auth.authMiddleware, async(req,res)=>{
+  app.post('/api/vote_post',auth.authMiddleware, async(req,res)=>{
     try{
       await db.query('EXEC vote_reply @replyID, @userID, @voteType',{
           replyID: req.body.replyID,
@@ -173,6 +173,63 @@ app.post('/forum/create_post',auth.authMiddleware, async(req,res)=>{
   })
   
 //--------------------------------------get functions--------------------------------------
+app.get('/api/category',async(req,res)=>{
+  try{
+    const result = await db.query('EXEC get_category');
+    res.status(200).send(result);
+  }
+  catch(error){
+    res.status(400).send(error.message);
+  }
+})
+
+app.get('/api/category/:category/page/:page',async(req,res)=>{
+  try{
+    const category = parseInt(req.params.category);
+    const page = parseInt(req.params.page);
+    const result = await db.query('EXEC get_post_by_category @category, @page',{
+      category: category,
+      page: page
+    });
+    res.status(200).send(result);
+  }
+  catch(error){
+    res.status(400).send(error.message);
+  }
+})
+app.get('/api/category/:category/page',(req,res)=>{
+  const category = req.params.category;
+  res.redirect(302, '/api/category/'+category+'/page/1')
+})
+app.get('/api/category/:category',(req,res)=>{
+  const category = req.params.category;
+  res.redirect(302, '/api/category/'+category+'/page/1')
+})
+app.get('/api/post/:postID/page',(req,res)=>{
+  const postID = req.params.postID;
+  res.redirect(302, '/api/post/'+postID+'/page/1')
+})
+
+app.get('/api/post/:postID',(req,res)=>{
+  const postID = req.params.postID;
+  res.redirect(302, '/api/post/'+postID+'/page/1')
+})
+
+app.get('/api/post/:postID/page/:page',async(req,res)=>{
+  try{
+    const postID = parseInt(req.params.postID);
+    const page = parseInt(req.params.page);
+    const result = await db.query('EXEC get_reply_by_postID @postID, @page',{
+      postID: postID,
+      page: page
+    });
+    res.status(200).send(result);
+  }
+  catch(error){
+    res.status(400).send(error.message);
+  }
+})
+
 app.listen(port, () => {
   console.log(`API running on port ${port}`)
 })
