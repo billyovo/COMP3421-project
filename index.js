@@ -8,7 +8,7 @@ const crypto = require("./helpers/crypto.js");
 const auth = require("./middleware/auth.js");
 
 const app = express();
-const port = 3000
+const port = 80;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
