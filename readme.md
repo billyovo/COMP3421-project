@@ -99,6 +99,7 @@ nothing (set cookie)
 ### forum POST functions (need auth token to use)
 ---
 <br>
+
 > POST **/api/create_post**
 <pre>
     create a new post
