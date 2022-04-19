@@ -28,7 +28,7 @@ app.post('/auth/name_availability', async (req, res) => {
 });
 
 app.post('/auth/register',async (req, res)=>{
-  const name = req.body.username;
+  const name = req.body.user_name;
   const password = req.body.password;
   if(name.match(/[!@#$%^&*()+ \-=\[\]{};':"\\|,.<>\/?]/)){
     res.status(400).send("Name cannot contain special character or spect except underscore!");
