@@ -3,12 +3,12 @@ var jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 function SHA256(input){
-    const hash = crypto.createHash('sha256').update(input).digest('hex');
+    const hash = crypto.createHash('sha256').update(input).digest('base64');
     return hash;
 }
 
 function getRandomBytes(){
-    return crypto.randomBytes(4).toString('hex'); 
+    return crypto.randomBytes(4).toString('base64'); 
 }
 
 function signRefreshToken(user_name, userID){
