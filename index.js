@@ -88,12 +88,12 @@ app.post('/auth/login',async (req, res, next)=>{
           secure: false,
           httpOnly: true,
           maxAge: 1209600000,
-          sameSite: 'none'
         }
       );
       res.status(200).send({
         user_name: result[0].user_name,
-        userID: result[0].userID
+        userID: result[0].userID,
+        token: refresh_token
       })
       break;
     }

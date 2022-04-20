@@ -1,8 +1,8 @@
 const crypto = require("../helpers/crypto.js");
 
 function auth(req,res,next){
-    const access_token = req.cookies.access_token || req.cookies.refresh_token;
-    
+    const access_token = req.headers.authorization.split(" ")[1];
+    console.log(access_token);
     const verify_token = crypto.verifyToken(access_token);
     if(verify_token){
         if(verify_token.userID !== req.body.userID){
