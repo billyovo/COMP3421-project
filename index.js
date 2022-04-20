@@ -2,6 +2,7 @@ const express = require('express')
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser')
+const cors = require('cors');
 
 const db = require("./helpers/database.js");
 const crypto = require("./helpers/crypto.js");
@@ -9,11 +10,15 @@ const auth = require("./middleware/auth.js");
 
 const app = express();
 const port = 3000;
-
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  credentials:  true
+}
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser())
 app.use(helmet());
+app.use(cors(corsOptions));
 
 //---------------------------------------auth functions------------------------------------------
 app.post('/auth/name_availability', async (req, res) => {
