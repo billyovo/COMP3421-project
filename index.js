@@ -112,7 +112,7 @@ app.post('/auth/refresh_access',async (req, res)=>{
   const refresh_token = req.cookies.refresh_token;
   res.set('Cache-Control', 'no-store');
   res.set('Pragma', 'no-cache');
-  if(!refresh_token || !crypto.verifyToken(refresh_token, 'refresh')){
+  if(!refresh_token || !crypto.verifyToken(refresh_token)){
     res.status(401).send("Please log in!");
   }
   else{
