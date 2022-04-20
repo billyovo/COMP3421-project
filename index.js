@@ -12,7 +12,8 @@ const app = express();
 const port = 3000;
 const corsOptions = {
   origin: 'http://localhost:3000',
-  credentials:  true
+  credentials:  true,
+  sameSite
 }
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -87,7 +88,8 @@ app.post('/auth/login',async (req, res, next)=>{
         { 
           secure: true,
           httpOnly: true,
-          maxAge: 1209600000
+          maxAge: 1209600000,
+          sameSite: 'none'
         }
       );
       res.status(200).send({
