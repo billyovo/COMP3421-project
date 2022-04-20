@@ -85,7 +85,7 @@ app.post('/auth/login',async (req, res, next)=>{
       const refresh_token = crypto.signRefreshToken(result[0].user_name, result[0].userID);
       res.cookie('refresh_token', refresh_token, 
         { 
-          secure: true,
+          secure: false,
           httpOnly: true,
           maxAge: 1209600000,
           sameSite: 'none'
@@ -119,7 +119,7 @@ app.post('/auth/refresh_access',async (req, res)=>{
     const access_token = crypto.signAccessToken(refresh_token);
     res.cookie('access_token', access_token, 
         { 
-          secure: true,
+          secure: false,
           httpOnly: true,
           maxAge: 43200000
         }
